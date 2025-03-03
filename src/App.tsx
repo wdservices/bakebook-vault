@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Recipe from "./pages/Recipe";
 import AddRecipe from "./pages/AddRecipe";
 import EditRecipe from "./pages/EditRecipe";
+import Receipts from "./pages/Receipts";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/recipe/:id" element={<Recipe />} />
             <Route path="/add" element={<AddRecipe />} />
             <Route path="/edit/:id" element={<EditRecipe />} />
+            <Route path="/receipts" element={<Receipts />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

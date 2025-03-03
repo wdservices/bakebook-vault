@@ -25,3 +25,14 @@ export interface Recipe {
 }
 
 export type NewRecipe = Omit<Recipe, 'id' | 'createdAt' | 'updatedAt'>;
+
+export interface Receipt {
+  id: string;
+  recipeId: string;
+  recipeName: string;
+  brandName: string;
+  createdAt: Date;
+  ingredients: Ingredient[];
+}
+
+export type NewReceipt = Omit<Receipt, 'id' | 'createdAt'>;
