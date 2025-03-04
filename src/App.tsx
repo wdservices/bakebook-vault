@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { RecipeProvider } from "@/context/RecipeContext";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Recipe from "./pages/Recipe";
 import AddRecipe from "./pages/AddRecipe";
@@ -23,12 +24,37 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/recipe/:id" element={<Recipe />} />
-            <Route path="/add" element={<AddRecipe />} />
-            <Route path="/edit/:id" element={<EditRecipe />} />
-            <Route path="/receipts" element={<Receipts />} />
+            {/* Public routes */}
             <Route path="/login" element={<Login />} />
+            
+            {/* Protected routes */}
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Index />
+              </ProtectedRoute>
+            } />
+            <Route path="/recipe/:id" element={
+              <ProtectedRoute>
+                <Recipe />
+              </ProtectedRoute>
+            } />
+            <Route path="/add" element={
+              <ProtectedRoute>
+                <AddRecipe />
+              </ProtectedRoute>
+            } />
+            <Route path="/edit/:id" element={
+              <ProtectedRoute>
+                <EditRecipe />
+              </ProtectedRoute>
+            } />
+            <Route path="/receipts" element={
+              <ProtectedRoute>
+                <Receipts />
+              </ProtectedRoute>
+            } />
+            
+            {/* Not found route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

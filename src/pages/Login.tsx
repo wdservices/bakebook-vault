@@ -1,17 +1,19 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Phone, Lock, User, ArrowRight } from "lucide-react";
+import { Mail, Phone, Lock, User, ArrowRight, Store } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [brandName, setBrandName] = useState("");
   const [isRegister, setIsRegister] = useState(false);
   const { toast } = useToast();
 
@@ -28,11 +30,25 @@ const Login = () => {
       return;
     }
 
+    if (isRegister && !brandName) {
+      toast({
+        title: "Brand name required",
+        description: "Please enter your bakery brand name",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // In a real app, this would connect to authentication service
+    // We would also store the brand name in the user profile
+    localStorage.setItem("user", JSON.stringify({ email, brandName }));
+    
     toast({
       title: isRegister ? "Registration successful" : "Login successful",
       description: "Welcome to Bakebook!",
     });
+    
+    navigate("/");
   };
 
   const handleForgotPassword = () => {
@@ -88,20 +104,38 @@ const Login = () => {
             </div>
             
             {isRegister && (
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    id="phone" 
-                    type="tel" 
-                    placeholder="+1 (123) 456-7890" 
-                    className="pl-10" 
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                  />
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="brandName">Brand Name</Label>
+                  <div className="relative">
+                    <Store className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="brandName" 
+                      type="text" 
+                      placeholder="Your Bakery Name" 
+                      className="pl-10" 
+                      value={brandName}
+                      onChange={(e) => setBrandName(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number (Optional)</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="phone" 
+                      type="tel" 
+                      placeholder="+1 (123) 456-7890" 
+                      className="pl-10" 
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </>
             )}
             
             <div className="space-y-2">
@@ -147,11 +181,6 @@ const Login = () => {
               >
                 {isRegister ? "Sign in" : "Create one"}
               </button>
-            </p>
-            <p className="text-xs text-muted-foreground mt-4">
-              <Link to="/" className="hover:underline">
-                Continue as guest
-              </Link>
             </p>
           </div>
         </CardFooter>
