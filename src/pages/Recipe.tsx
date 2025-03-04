@@ -9,6 +9,7 @@ import {
   ArrowLeft, Edit, Trash2, Clock, ThermometerSun, AlertCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { AIRecommendations } from "@/components/recipe/AIRecommendations";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -173,8 +174,8 @@ const Recipe = () => {
           </div>
         </div>
         
-        {/* Two column layout for larger screens */}
-        <div className="grid md:grid-cols-2 gap-8">
+        {/* Three column layout for larger screens */}
+        <div className="grid md:grid-cols-3 gap-8">
           {/* Ingredients Column */}
           <div>
             <h2 className="text-xl font-semibold mb-4">Ingredients</h2>
@@ -230,10 +231,16 @@ const Recipe = () => {
               </ol>
             </div>
           </div>
+          
+          {/* AI Recommendations Column */}
+          <div>
+            <h2 className="text-xl font-semibold mb-4">AI Suggestions</h2>
+            <AIRecommendations recipe={recipe} />
+          </div>
         </div>
       </main>
     </div>
   );
-};
+}
 
 export default Recipe;

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Mail, Phone, Lock, Store, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Admin credentials (in a real app, this would be handled securely on the backend)
 const ADMIN_EMAIL = "admin@bakebook.com";
 const ADMIN_PASSWORD = "admin123";
 
@@ -22,13 +20,11 @@ const Login = () => {
   const [isRegister, setIsRegister] = useState(false);
   const { toast } = useToast();
 
-  // Get the page they were trying to access before being redirected to login
   const from = location.state?.from?.pathname || "/";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Simple validation
     if (!email || !password) {
       toast({
         title: "Missing fields",
@@ -38,7 +34,6 @@ const Login = () => {
       return;
     }
 
-    // Check if admin credentials were used (hidden feature)
     if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
       localStorage.setItem("user", JSON.stringify({ 
         email, 
@@ -54,7 +49,6 @@ const Login = () => {
       return;
     }
 
-    // User registration/login
     if (isRegister && !brandName) {
       toast({
         title: "Brand name required",
@@ -64,12 +58,13 @@ const Login = () => {
       return;
     }
 
-    // In a real app, this would connect to authentication service
     localStorage.setItem("user", JSON.stringify({ 
       email, 
       brandName, 
       isAdmin: false 
     }));
+    
+    window.dispatchEvent(new Event('storage'));
     
     toast({
       title: isRegister ? "Registration successful" : "Login successful",

@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Menu, X, LogIn, LogOut } from "lucide-react";
+import { PlusCircle, Menu, X, LogOut } from "lucide-react";
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -13,12 +13,32 @@ export function Header() {
 
   // Get user data including brand name
   useEffect(() => {
+    const handleUserChange = () => {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        const parsedData = JSON.parse(userData);
+        setBrandName(parsedData.brandName || "Bakebook");
+      }
+    };
+    
+    // Initial load
+    handleUserChange();
+    
+    // Listen for storage events to update brand name when localStorage changes
+    window.addEventListener("storage", handleUserChange);
+    
+    // Clean up event listener
+    return () => window.removeEventListener("storage", handleUserChange);
+  }, []);
+
+  // Force refresh when navigating to the page
+  useEffect(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
       const parsedData = JSON.parse(userData);
       setBrandName(parsedData.brandName || "Bakebook");
     }
-  }, []);
+  }, [location.pathname]);
 
   // Handle scroll effect
   useEffect(() => {
