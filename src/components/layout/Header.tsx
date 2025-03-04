@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Menu, X } from "lucide-react";
+import { PlusCircle, Menu, X, LogIn } from "lucide-react";
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -49,6 +49,12 @@ export function Header() {
               New Recipe
             </Link>
           </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/login">
+              <LogIn className="h-4 w-4 mr-2" />
+              Login
+            </Link>
+          </Button>
         </nav>
 
         {/* Mobile Menu Button */}
@@ -82,6 +88,12 @@ export function Header() {
               <Link to="/add">
                 <PlusCircle className="h-4 w-4 mr-2" />
                 New Recipe
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/login">
+                <LogIn className="h-4 w-4 mr-2" />
+                Login
               </Link>
             </Button>
           </div>
