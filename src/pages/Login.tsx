@@ -4,9 +4,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Phone, Lock, User, ArrowRight, Store, Shield } from "lucide-react";
+import { Mail, Phone, Lock, Store, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Admin credentials (in a real app, this would be handled securely on the backend)
@@ -21,7 +20,6 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [brandName, setBrandName] = useState("");
   const [isRegister, setIsRegister] = useState(false);
-  const [loginType, setLoginType] = useState<"user" | "admin">("user");
   const { toast } = useToast();
 
   // Get the page they were trying to access before being redirected to login
@@ -40,27 +38,19 @@ const Login = () => {
       return;
     }
 
-    if (loginType === "admin") {
-      // Check admin credentials
-      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        localStorage.setItem("user", JSON.stringify({ 
-          email, 
-          isAdmin: true 
-        }));
-        
-        toast({
-          title: "Admin login successful",
-          description: "Welcome to the admin dashboard",
-        });
-        
-        navigate("/admin");
-      } else {
-        toast({
-          title: "Invalid admin credentials",
-          description: "Please check your email and password",
-          variant: "destructive",
-        });
-      }
+    // Check if admin credentials were used (hidden feature)
+    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      localStorage.setItem("user", JSON.stringify({ 
+        email, 
+        isAdmin: true 
+      }));
+      
+      toast({
+        title: "Admin login successful",
+        description: "Welcome to the admin dashboard",
+      });
+      
+      navigate("/admin");
       return;
     }
 
@@ -114,33 +104,14 @@ const Login = () => {
               Bakebook
             </span>
           </div>
-          <Tabs value={loginType} onValueChange={(v) => setLoginType(v as "user" | "admin")} className="w-full">
-            <TabsList className="grid grid-cols-2 mb-4">
-              <TabsTrigger value="user">User Login</TabsTrigger>
-              <TabsTrigger value="admin">Admin Access</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="user">
-              <CardTitle className="text-2xl font-semibold text-center">
-                {isRegister ? "Create an account" : "Welcome back"}
-              </CardTitle>
-              <CardDescription className="text-center">
-                {isRegister 
-                  ? "Enter your details to create your account" 
-                  : "Enter your credentials to access your account"}
-              </CardDescription>
-            </TabsContent>
-            
-            <TabsContent value="admin">
-              <CardTitle className="text-2xl font-semibold text-center flex justify-center items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Admin Access
-              </CardTitle>
-              <CardDescription className="text-center">
-                Enter administrator credentials to access the dashboard
-              </CardDescription>
-            </TabsContent>
-          </Tabs>
+          <CardTitle className="text-2xl font-semibold text-center">
+            {isRegister ? "Create an account" : "Welcome back"}
+          </CardTitle>
+          <CardDescription className="text-center">
+            {isRegister 
+              ? "Enter your details to create your account" 
+              : "Enter your credentials to access your account"}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -151,7 +122,7 @@ const Login = () => {
                 <Input 
                   id="email" 
                   type="email" 
-                  placeholder={loginType === "admin" ? "admin@bakebook.com" : "baker@example.com"} 
+                  placeholder="baker@example.com" 
                   className="pl-10" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -160,7 +131,7 @@ const Login = () => {
               </div>
             </div>
             
-            {loginType === "user" && isRegister && (
+            {isRegister && (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="brandName">Brand Name</Label>
@@ -198,7 +169,7 @@ const Login = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                {(loginType === "user" && !isRegister) && (
+                {!isRegister && (
                   <button 
                     type="button"
                     onClick={handleForgotPassword}
@@ -222,29 +193,25 @@ const Login = () => {
             </div>
             
             <Button type="submit" className="w-full">
-              {loginType === "admin" 
-                ? "Login as Admin" 
-                : (isRegister ? "Create account" : "Sign in")}
+              {isRegister ? "Create account" : "Sign in"}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </form>
         </CardContent>
-        {loginType === "user" && (
-          <CardFooter>
-            <div className="text-center w-full">
-              <p className="text-sm text-muted-foreground">
-                {isRegister ? "Already have an account?" : "Don't have an account?"}
-                <button
-                  type="button"
-                  onClick={() => setIsRegister(!isRegister)}
-                  className="ml-1 text-primary hover:underline font-medium"
-                >
-                  {isRegister ? "Sign in" : "Create one"}
-                </button>
-              </p>
-            </div>
-          </CardFooter>
-        )}
+        <CardFooter>
+          <div className="text-center w-full">
+            <p className="text-sm text-muted-foreground">
+              {isRegister ? "Already have an account?" : "Don't have an account?"}
+              <button
+                type="button"
+                onClick={() => setIsRegister(!isRegister)}
+                className="ml-1 text-primary hover:underline font-medium"
+              >
+                {isRegister ? "Sign in" : "Create one"}
+              </button>
+            </p>
+          </div>
+        </CardFooter>
       </Card>
     </div>
   );
