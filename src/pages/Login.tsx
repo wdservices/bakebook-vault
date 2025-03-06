@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,6 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // Get the intended destination after login, default to dashboard
   const from = location.state?.from?.pathname || "/dashboard";
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,7 +63,6 @@ const Login = () => {
           return;
         }
 
-        // Register the user with Supabase
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email,
           password,
@@ -80,9 +77,7 @@ const Login = () => {
           return;
         }
 
-        // Check if we have a user before trying to create a profile
         if (authData.user) {
-          // Save brand name to profiles table with a valid role value
           const { error: profileError } = await supabase
             .from('profiles')
             .insert([
@@ -90,8 +85,8 @@ const Login = () => {
                 id: authData.user.id,
                 brand_name: brandName,
                 phone: phone || null,
-                role: 'user', // Using 'user' which should be allowed by the constraint
-                name: brandName // Using brand name as the name field as well
+                role: 'user',
+                name: brandName
               }
             ]);
 
@@ -111,7 +106,6 @@ const Login = () => {
           description: "Welcome to Bakebook!",
         });
         
-        // Store brand name in localStorage for immediate use
         localStorage.setItem("user", JSON.stringify({ 
           email, 
           brandName,
@@ -120,7 +114,6 @@ const Login = () => {
         
         navigate(from);
       } else {
-        // Login the user with Supabase
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -135,24 +128,30 @@ const Login = () => {
           return;
         }
 
-        // Fetch user profile to get brand name
         if (authData.user) {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('brand_name')
-            .eq('id', authData.user.id)
-            .single();
+          try {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('brand_name')
+              .eq('id', authData.user.id);
 
-          if (profileError) {
-            console.error("Error fetching profile:", profileError);
+            if (profileError) {
+              console.error("Error fetching profile:", profileError);
+            }
+
+            localStorage.setItem("user", JSON.stringify({ 
+              email, 
+              brandName: profileData && profileData.length > 0 ? profileData[0].brand_name : "Bakebook",
+              isAdmin: false 
+            }));
+          } catch (error) {
+            console.error("Error handling profile data:", error);
+            localStorage.setItem("user", JSON.stringify({ 
+              email, 
+              brandName: "Bakebook",
+              isAdmin: false 
+            }));
           }
-
-          // Store user data in localStorage
-          localStorage.setItem("user", JSON.stringify({ 
-            email, 
-            brandName: profileData?.brand_name || "Bakebook",
-            isAdmin: false 
-          }));
         }
         
         toast({
@@ -171,7 +170,6 @@ const Login = () => {
       });
     } finally {
       setIsLoading(false);
-      // Trigger storage event to update other components
       window.dispatchEvent(new Event('storage'));
     }
   };

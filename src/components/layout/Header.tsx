@@ -18,25 +18,29 @@ export function Header() {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
-        // Get profile data from Supabase
-        const { data: profileData, error } = await supabase
-          .from('profiles')
-          .select('brand_name')
-          .eq('id', session.user.id)
-          .single();
+        try {
+          // Get profile data from Supabase - using array fetch instead of single
+          const { data: profileData, error } = await supabase
+            .from('profiles')
+            .select('brand_name')
+            .eq('id', session.user.id);
         
-        if (error) {
-          console.error("Error fetching profile:", error);
-        } else if (profileData) {
-          setBrandName(profileData.brand_name || "Bakebook");
-          
-          // Update localStorage for consistency
-          const userData = localStorage.getItem("user");
-          if (userData) {
-            const parsedData = JSON.parse(userData);
-            parsedData.brandName = profileData.brand_name;
-            localStorage.setItem("user", JSON.stringify(parsedData));
+          if (error) {
+            console.error("Error fetching profile:", error);
+          } else if (profileData && profileData.length > 0) {
+            // Use the first result from the array
+            setBrandName(profileData[0].brand_name || "Bakebook");
+            
+            // Update localStorage for consistency
+            const userData = localStorage.getItem("user");
+            if (userData) {
+              const parsedData = JSON.parse(userData);
+              parsedData.brandName = profileData[0].brand_name;
+              localStorage.setItem("user", JSON.stringify(parsedData));
+            }
           }
+        } catch (error) {
+          console.error("Failed to fetch profile data:", error);
         }
       } else {
         // Fallback to localStorage
@@ -71,14 +75,18 @@ export function Header() {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
-        const { data: profileData, error } = await supabase
-          .from('profiles')
-          .select('brand_name')
-          .eq('id', session.user.id)
-          .single();
+        try {
+          // Get profile data using array fetch
+          const { data: profileData, error } = await supabase
+            .from('profiles')
+            .select('brand_name')
+            .eq('id', session.user.id);
         
-        if (!error && profileData) {
-          setBrandName(profileData.brand_name || "Bakebook");
+          if (!error && profileData && profileData.length > 0) {
+            setBrandName(profileData[0].brand_name || "Bakebook");
+          }
+        } catch (error) {
+          console.error("Failed to refresh profile data:", error);
         }
       } else {
         const userData = localStorage.getItem("user");
