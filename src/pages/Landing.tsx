@@ -8,6 +8,27 @@ import { Card, CardContent } from "@/components/ui/card";
 const Landing = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/80">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 py-4 px-4 sm:px-6 bg-background/80 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <Link to="/" className="flex items-center space-x-2">
+            <span className="text-2xl font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              BakeBook
+            </span>
+          </Link>
+          <div className="flex items-center space-x-4">
+            <Link to="/login" className="text-muted-foreground hover:text-foreground transition">
+              Sign In
+            </Link>
+            <Button asChild size="sm">
+              <Link to="/login">
+                Get Started
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <section className="relative pt-20 pb-32 overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1618160702438-9b02ab6515c9')] bg-cover bg-center opacity-10"></div>
