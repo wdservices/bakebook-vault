@@ -1,10 +1,11 @@
+
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Phone, Lock, Store, ArrowRight } from "lucide-react";
+import { Mail, Phone, Lock, Store, ArrowRight, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const ADMIN_EMAIL = "admin@bakebook.com";
@@ -20,7 +21,8 @@ const Login = () => {
   const [isRegister, setIsRegister] = useState(false);
   const { toast } = useToast();
 
-  const from = location.state?.from?.pathname || "/";
+  // Get the intended destination after login, default to dashboard
+  const from = location.state?.from?.pathname || "/dashboard";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,7 +93,15 @@ const Login = () => {
   };
 
   return (
-    <div className="page-container min-h-screen flex items-center justify-center py-12">
+    <div className="page-container min-h-screen flex items-center justify-center py-12 relative">
+      <Link 
+        to="/" 
+        className="absolute top-6 left-6 flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Home
+      </Link>
+      
       <Card className="w-full max-w-md mx-auto animate-scale-in">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-6">

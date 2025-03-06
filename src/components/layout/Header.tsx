@@ -68,7 +68,7 @@ export function Header() {
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo & Brand */}
-        <Link to="/" className="flex items-center space-x-2">
+        <Link to="/dashboard" className="flex items-center space-x-2">
           <span className="text-2xl font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             {brandName || "Bakebook"}
           </span>
@@ -76,7 +76,7 @@ export function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-          <Link to="/" className="text-foreground/80 hover:text-foreground transition">
+          <Link to="/dashboard" className="text-foreground/80 hover:text-foreground transition">
             Recipes
           </Link>
           <Link to="/receipts" className="text-foreground/80 hover:text-foreground transition">
@@ -110,7 +110,7 @@ export function Header() {
         <div className="md:hidden absolute top-full left-0 right-0 glass-bg shadow-md animate-slide-up">
           <div className="p-4 flex flex-col space-y-4">
             <Link 
-              to="/" 
+              to="/dashboard" 
               className="text-foreground/80 hover:text-foreground transition p-2"
             >
               Recipes

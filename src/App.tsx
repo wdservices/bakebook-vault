@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { RecipeProvider } from "@/context/RecipeContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AdminRoute from "@/components/auth/AdminRoute";
+import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Recipe from "./pages/Recipe";
 import AddRecipe from "./pages/AddRecipe";
@@ -27,6 +28,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             {/* Public routes */}
+            <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             
             {/* Admin routes */}
@@ -37,7 +39,7 @@ const App = () => (
             } />
             
             {/* Protected routes */}
-            <Route path="/" element={
+            <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Index />
               </ProtectedRoute>
