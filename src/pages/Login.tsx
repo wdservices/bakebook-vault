@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -79,8 +80,9 @@ const Login = () => {
           return;
         }
 
-        // Save brand name to profiles table
+        // Check if we have a user before trying to create a profile
         if (authData.user) {
+          // Save brand name to profiles table with a valid role value
           const { error: profileError } = await supabase
             .from('profiles')
             .insert([
@@ -88,12 +90,13 @@ const Login = () => {
                 id: authData.user.id,
                 brand_name: brandName,
                 phone: phone || null,
-                role: 'user',
+                role: 'user', // Using 'user' which should be allowed by the constraint
                 name: brandName // Using brand name as the name field as well
               }
             ]);
 
           if (profileError) {
+            console.error("Profile creation error:", profileError);
             toast({
               title: "Profile creation failed",
               description: profileError.message,
