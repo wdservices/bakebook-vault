@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Phone, Lock, Store, ArrowRight, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const ADMIN_EMAIL = "admin@bakebook.com";
 const ADMIN_PASSWORD = "admin123";
@@ -19,64 +19,161 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [brandName, setBrandName] = useState("");
   const [isRegister, setIsRegister] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   // Get the intended destination after login, default to dashboard
   const from = location.state?.from?.pathname || "/dashboard";
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
-    if (!email || !password) {
+    try {
+      if (!email || !password) {
+        toast({
+          title: "Missing fields",
+          description: "Please fill in all required fields",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+        localStorage.setItem("user", JSON.stringify({ 
+          email, 
+          isAdmin: true 
+        }));
+        
+        toast({
+          title: "Admin login successful",
+          description: "Welcome to the admin dashboard",
+        });
+        
+        navigate("/admin");
+        return;
+      }
+
+      if (isRegister) {
+        if (!brandName) {
+          toast({
+            title: "Brand name required",
+            description: "Please enter your bakery brand name",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Register the user with Supabase
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+
+        if (authError) {
+          toast({
+            title: "Registration failed",
+            description: authError.message,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Save brand name to profiles table
+        if (authData.user) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([
+              { 
+                id: authData.user.id,
+                brand_name: brandName,
+                phone: phone || null,
+                role: 'user',
+                name: brandName // Using brand name as the name field as well
+              }
+            ]);
+
+          if (profileError) {
+            toast({
+              title: "Profile creation failed",
+              description: profileError.message,
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+
+        toast({
+          title: "Registration successful",
+          description: "Welcome to Bakebook!",
+        });
+        
+        // Store brand name in localStorage for immediate use
+        localStorage.setItem("user", JSON.stringify({ 
+          email, 
+          brandName,
+          isAdmin: false 
+        }));
+        
+        navigate(from);
+      } else {
+        // Login the user with Supabase
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (authError) {
+          toast({
+            title: "Login failed",
+            description: authError.message,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Fetch user profile to get brand name
+        if (authData.user) {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('brand_name')
+            .eq('id', authData.user.id)
+            .single();
+
+          if (profileError) {
+            console.error("Error fetching profile:", profileError);
+          }
+
+          // Store user data in localStorage
+          localStorage.setItem("user", JSON.stringify({ 
+            email, 
+            brandName: profileData?.brand_name || "Bakebook",
+            isAdmin: false 
+          }));
+        }
+        
+        toast({
+          title: "Login successful",
+          description: "Welcome back to Bakebook!",
+        });
+        
+        navigate(from);
+      }
+    } catch (error) {
+      console.error("Authentication error:", error);
       toast({
-        title: "Missing fields",
-        description: "Please fill in all required fields",
+        title: "Authentication error",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setIsLoading(false);
+      // Trigger storage event to update other components
+      window.dispatchEvent(new Event('storage'));
     }
-
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      localStorage.setItem("user", JSON.stringify({ 
-        email, 
-        isAdmin: true 
-      }));
-      
-      toast({
-        title: "Admin login successful",
-        description: "Welcome to the admin dashboard",
-      });
-      
-      navigate("/admin");
-      return;
-    }
-
-    if (isRegister && !brandName) {
-      toast({
-        title: "Brand name required",
-        description: "Please enter your bakery brand name",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    localStorage.setItem("user", JSON.stringify({ 
-      email, 
-      brandName, 
-      isAdmin: false 
-    }));
-    
-    window.dispatchEvent(new Event('storage'));
-    
-    toast({
-      title: isRegister ? "Registration successful" : "Login successful",
-      description: "Welcome to Bakebook!",
-    });
-    
-    navigate(from);
   };
 
-  const handleForgotPassword = () => {
+  const handleForgotPassword = async () => {
     if (!email) {
       toast({
         title: "Email required",
@@ -86,10 +183,30 @@ const Login = () => {
       return;
     }
     
-    toast({
-      title: "Reset email sent",
-      description: `Password reset instructions have been sent to ${email}`,
-    });
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      
+      if (error) {
+        toast({
+          title: "Reset failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      toast({
+        title: "Reset email sent",
+        description: `Password reset instructions have been sent to ${email}`,
+      });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      toast({
+        title: "Reset error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -197,9 +314,9 @@ const Login = () => {
               </div>
             </div>
             
-            <Button type="submit" className="w-full">
-              {isRegister ? "Create account" : "Sign in"}
-              <ArrowRight className="ml-2 h-4 w-4" />
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Processing..." : (isRegister ? "Create account" : "Sign in")}
+              {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
             </Button>
           </form>
         </CardContent>

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Menu, X, LogOut } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -13,7 +14,44 @@ export function Header() {
 
   // Get user data including brand name
   useEffect(() => {
-    const handleUserChange = () => {
+    const fetchUserProfile = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        // Get profile data from Supabase
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('brand_name')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (error) {
+          console.error("Error fetching profile:", error);
+        } else if (profileData) {
+          setBrandName(profileData.brand_name || "Bakebook");
+          
+          // Update localStorage for consistency
+          const userData = localStorage.getItem("user");
+          if (userData) {
+            const parsedData = JSON.parse(userData);
+            parsedData.brandName = profileData.brand_name;
+            localStorage.setItem("user", JSON.stringify(parsedData));
+          }
+        }
+      } else {
+        // Fallback to localStorage
+        const userData = localStorage.getItem("user");
+        if (userData) {
+          const parsedData = JSON.parse(userData);
+          setBrandName(parsedData.brandName || "Bakebook");
+        }
+      }
+    };
+    
+    fetchUserProfile();
+    
+    // Listen for storage events to update brand name when localStorage changes
+    const handleStorageChange = () => {
       const userData = localStorage.getItem("user");
       if (userData) {
         const parsedData = JSON.parse(userData);
@@ -21,23 +59,37 @@ export function Header() {
       }
     };
     
-    // Initial load
-    handleUserChange();
-    
-    // Listen for storage events to update brand name when localStorage changes
-    window.addEventListener("storage", handleUserChange);
+    window.addEventListener("storage", handleStorageChange);
     
     // Clean up event listener
-    return () => window.removeEventListener("storage", handleUserChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   // Force refresh when navigating to the page
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      const parsedData = JSON.parse(userData);
-      setBrandName(parsedData.brandName || "Bakebook");
-    }
+    const refreshBrandName = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('brand_name')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (!error && profileData) {
+          setBrandName(profileData.brand_name || "Bakebook");
+        }
+      } else {
+        const userData = localStorage.getItem("user");
+        if (userData) {
+          const parsedData = JSON.parse(userData);
+          setBrandName(parsedData.brandName || "Bakebook");
+        }
+      }
+    };
+    
+    refreshBrandName();
   }, [location.pathname]);
 
   // Handle scroll effect
@@ -55,8 +107,14 @@ export function Header() {
   }, [location.pathname]);
 
   // Handle logout
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Clear Supabase session
+    await supabase.auth.signOut();
+    
+    // Clear local storage
     localStorage.removeItem("user");
+    
+    // Navigate to login page
     navigate("/login");
   };
 
