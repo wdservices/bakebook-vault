@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 const ADMIN_EMAIL = "admin@bakebook.com";
 const ADMIN_PASSWORD = "admin123";
+
+// Define valid role options for the profile
+const VALID_ROLE_OPTIONS = ['user', 'admin', 'baker'];
 
 const Login = () => {
   const navigate = useNavigate();
@@ -78,6 +82,7 @@ const Login = () => {
         }
 
         if (authData.user) {
+          // Make sure to use a valid role value according to the table constraint
           const { error: profileError } = await supabase
             .from('profiles')
             .insert([
@@ -85,7 +90,7 @@ const Login = () => {
                 id: authData.user.id,
                 brand_name: brandName,
                 phone: phone || null,
-                role: 'user',
+                role: 'user', // This value must match one of the allowed role values in the database
                 name: brandName
               }
             ]);
@@ -99,20 +104,24 @@ const Login = () => {
             });
             return;
           }
-        }
 
-        toast({
-          title: "Registration successful",
-          description: "Welcome to Bakebook!",
-        });
-        
-        localStorage.setItem("user", JSON.stringify({ 
-          email, 
-          brandName,
-          isAdmin: false 
-        }));
-        
-        navigate(from);
+          // Store the brand name in localStorage for immediate use
+          localStorage.setItem("user", JSON.stringify({ 
+            email, 
+            brandName,
+            isAdmin: false 
+          }));
+          
+          // Trigger a storage event to update components that listen for changes
+          window.dispatchEvent(new Event('storage'));
+          
+          toast({
+            title: "Registration successful",
+            description: "Welcome to Bakebook!",
+          });
+          
+          navigate(from);
+        }
       } else {
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
           email,
@@ -132,18 +141,26 @@ const Login = () => {
           try {
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
-              .select('brand_name')
-              .eq('id', authData.user.id);
+              .select('brand_name, role')
+              .eq('id', authData.user.id)
+              .limit(1);
 
             if (profileError) {
               console.error("Error fetching profile:", profileError);
             }
 
+            const userBrandName = profileData && profileData.length > 0 ? profileData[0].brand_name : "Bakebook";
+            
             localStorage.setItem("user", JSON.stringify({ 
               email, 
-              brandName: profileData && profileData.length > 0 ? profileData[0].brand_name : "Bakebook",
+              brandName: userBrandName,
               isAdmin: false 
             }));
+            
+            // Trigger storage event manually to update header
+            window.dispatchEvent(new Event('storage'));
+            
+            console.log("User data saved with brand name:", userBrandName);
           } catch (error) {
             console.error("Error handling profile data:", error);
             localStorage.setItem("user", JSON.stringify({ 
@@ -170,7 +187,6 @@ const Login = () => {
       });
     } finally {
       setIsLoading(false);
-      window.dispatchEvent(new Event('storage'));
     }
   };
 

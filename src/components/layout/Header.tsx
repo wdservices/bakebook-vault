@@ -19,25 +19,29 @@ export function Header() {
       
       if (session?.user) {
         try {
-          // Get profile data from Supabase - using array fetch instead of single
+          // Get profile data from Supabase - using array fetch
           const { data: profileData, error } = await supabase
             .from('profiles')
             .select('brand_name')
-            .eq('id', session.user.id);
+            .eq('id', session.user.id)
+            .limit(1);
         
           if (error) {
             console.error("Error fetching profile:", error);
           } else if (profileData && profileData.length > 0) {
-            // Use the first result from the array
-            setBrandName(profileData[0].brand_name || "Bakebook");
+            const fetchedBrandName = profileData[0].brand_name || "Bakebook";
+            console.log("Setting brand name from DB:", fetchedBrandName);
+            setBrandName(fetchedBrandName);
             
             // Update localStorage for consistency
             const userData = localStorage.getItem("user");
             if (userData) {
               const parsedData = JSON.parse(userData);
-              parsedData.brandName = profileData[0].brand_name;
+              parsedData.brandName = fetchedBrandName;
               localStorage.setItem("user", JSON.stringify(parsedData));
             }
+          } else {
+            console.log("No profile data found for user:", session.user.id);
           }
         } catch (error) {
           console.error("Failed to fetch profile data:", error);
@@ -46,8 +50,15 @@ export function Header() {
         // Fallback to localStorage
         const userData = localStorage.getItem("user");
         if (userData) {
-          const parsedData = JSON.parse(userData);
-          setBrandName(parsedData.brandName || "Bakebook");
+          try {
+            const parsedData = JSON.parse(userData);
+            const localBrandName = parsedData.brandName || "Bakebook";
+            console.log("Setting brand name from localStorage:", localBrandName);
+            setBrandName(localBrandName);
+          } catch (error) {
+            console.error("Error parsing user data from localStorage:", error);
+            setBrandName("Bakebook");
+          }
         }
       }
     };
@@ -58,8 +69,13 @@ export function Header() {
     const handleStorageChange = () => {
       const userData = localStorage.getItem("user");
       if (userData) {
-        const parsedData = JSON.parse(userData);
-        setBrandName(parsedData.brandName || "Bakebook");
+        try {
+          const parsedData = JSON.parse(userData);
+          console.log("Storage event: updating brand name to:", parsedData.brandName);
+          setBrandName(parsedData.brandName || "Bakebook");
+        } catch (error) {
+          console.error("Error parsing user data on storage event:", error);
+        }
       }
     };
     
@@ -80,10 +96,15 @@ export function Header() {
           const { data: profileData, error } = await supabase
             .from('profiles')
             .select('brand_name')
-            .eq('id', session.user.id);
+            .eq('id', session.user.id)
+            .limit(1);
         
           if (!error && profileData && profileData.length > 0) {
-            setBrandName(profileData[0].brand_name || "Bakebook");
+            const fetchedBrandName = profileData[0].brand_name || "Bakebook";
+            console.log("Refreshing brand name to:", fetchedBrandName);
+            setBrandName(fetchedBrandName);
+          } else {
+            console.log("No profile data found on refresh for user:", session.user.id);
           }
         } catch (error) {
           console.error("Failed to refresh profile data:", error);
@@ -91,8 +112,13 @@ export function Header() {
       } else {
         const userData = localStorage.getItem("user");
         if (userData) {
-          const parsedData = JSON.parse(userData);
-          setBrandName(parsedData.brandName || "Bakebook");
+          try {
+            const parsedData = JSON.parse(userData);
+            console.log("Setting brand name from localStorage on refresh:", parsedData.brandName);
+            setBrandName(parsedData.brandName || "Bakebook");
+          } catch (error) {
+            console.error("Error parsing user data on refresh:", error);
+          }
         }
       }
     };
