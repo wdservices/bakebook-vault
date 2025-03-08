@@ -22,9 +22,10 @@ export interface Recipe {
   bakingTime: string;
   createdAt: Date;
   updatedAt: Date;
+  userId: string;
 }
 
-export type NewRecipe = Omit<Recipe, 'id' | 'createdAt' | 'updatedAt'>;
+export type NewRecipe = Omit<Recipe, 'id' | 'createdAt' | 'updatedAt' | 'userId'>;
 
 export interface Receipt {
   id: string;

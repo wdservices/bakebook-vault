@@ -20,53 +20,58 @@ const AdminDashboard = () => {
   const [recipesCount, setRecipesCount] = useState(0);
   const { toast } = useToast();
   
-  // Load real user data
+  // Load user data and recipe counts
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       try {
         // Check if the logged-in user is an admin
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
-        setIsAdmin(user.isAdmin === true);
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
         
-        // If not admin, redirect to home
-        if (!user.isAdmin) {
+        if (!user || user.email !== 'admin@bakebook.com') {
+          setIsAdmin(false);
           navigate("/");
           return;
         }
         
+        setIsAdmin(true);
+        
         // Fetch profiles from Supabase
-        const { data, error } = await supabase
+        const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('*');
         
-        if (error) {
-          console.error("Error fetching users:", error);
-          toast({
-            title: "Error fetching users",
-            description: error.message,
-            variant: "destructive",
-          });
-          return;
+        if (profilesError) {
+          console.error("Error fetching users:", profilesError);
+          throw profilesError;
         }
         
-        if (data) {
-          console.log("Fetched user data:", data);
-          setUsers(data);
+        if (profilesData) {
+          console.log("Fetched user data:", profilesData);
+          setUsers(profilesData);
           
           // Prepare chart data based on user registration dates
-          prepareChartData(data);
-          
-          // Get recipes count - in a real app, you would fetch this from your database
-          const recipesEstimate = data.length > 0 ? data.length * 2 : 0;
-          setRecipesCount(recipesEstimate);
-        } else {
-          console.log("No user data returned from Supabase");
+          prepareChartData(profilesData);
         }
-      } catch (error) {
+        
+        // Count recipes from the recipes table
+        const { count: recipesCount, error: recipesError } = await supabase
+          .from('recipes')
+          .select('*', { count: 'exact', head: true });
+        
+        if (recipesError) {
+          console.error("Error counting recipes:", recipesError);
+          throw recipesError;
+        }
+        
+        setRecipesCount(recipesCount || 0);
+        console.log("Total recipes count:", recipesCount);
+        
+      } catch (error: any) {
         console.error("Error in admin dashboard:", error);
         toast({
           title: "Error loading dashboard",
-          description: "Failed to load admin dashboard data",
+          description: error.message || "Failed to load admin dashboard data",
           variant: "destructive",
         });
       } finally {
@@ -74,7 +79,7 @@ const AdminDashboard = () => {
       }
     };
     
-    fetchUsers();
+    fetchData();
   }, [navigate, toast]);
   
   // Process user data to generate monthly registration chart
@@ -106,7 +111,7 @@ const AdminDashboard = () => {
       chartDataArray.sort((a, b) => {
         const dateA = new Date(a.name);
         const dateB = new Date(b.name);
-        return dateA - dateB;
+        return dateA.getTime() - dateB.getTime();
       });
       
       setChartData(chartDataArray);
@@ -115,7 +120,7 @@ const AdminDashboard = () => {
     }
   };
   
-  // Calculate total number of recipes
+  // Get total recipes count
   const getTotalRecipes = () => {
     return recipesCount;
   };
@@ -218,7 +223,7 @@ const AdminDashboard = () => {
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-3">
                                 <Avatar className="h-8 w-8">
-                                  <AvatarFallback>{user.brand_name ? user.brand_name.charAt(0) : 'U'}</AvatarFallback>
+                                  <AvatarFallback>{user.brand_name ? user.brand_name.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
                                 </Avatar>
                                 <div>
                                   <p className="font-medium">{user.name || 'Unknown'}</p>

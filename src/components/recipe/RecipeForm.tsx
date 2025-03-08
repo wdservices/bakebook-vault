@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -45,7 +44,7 @@ export function RecipeForm({ initialRecipe = emptyRecipe, recipeId }: RecipeForm
   const { toast } = useToast();
   const { addRecipe, updateRecipe } = useRecipes();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -65,14 +64,14 @@ export function RecipeForm({ initialRecipe = emptyRecipe, recipeId }: RecipeForm
 
       if (recipeId) {
         // Update existing recipe
-        updateRecipe(recipeId, recipe);
+        await updateRecipe(recipeId, recipe);
         toast({
           title: "Recipe updated",
           description: "Your recipe has been updated successfully",
         });
       } else {
         // Add new recipe
-        addRecipe(recipe);
+        await addRecipe(recipe);
         toast({
           title: "Recipe created",
           description: "Your new recipe has been saved",
@@ -96,7 +95,6 @@ export function RecipeForm({ initialRecipe = emptyRecipe, recipeId }: RecipeForm
     setRecipe(prev => ({ ...prev, [field]: value }));
   };
 
-  // Ingredient handlers
   const addIngredient = () => {
     setRecipe(prev => ({
       ...prev,
@@ -122,7 +120,6 @@ export function RecipeForm({ initialRecipe = emptyRecipe, recipeId }: RecipeForm
     }));
   };
 
-  // Move ingredient up or down in the list
   const moveIngredient = (id: string, direction: "up" | "down") => {
     const index = recipe.ingredients.findIndex(ing => ing.id === id);
     if (
@@ -144,7 +141,6 @@ export function RecipeForm({ initialRecipe = emptyRecipe, recipeId }: RecipeForm
     }));
   };
 
-  // Step handlers
   const addStep = () => {
     setRecipe(prev => ({
       ...prev,
@@ -170,7 +166,6 @@ export function RecipeForm({ initialRecipe = emptyRecipe, recipeId }: RecipeForm
     }));
   };
 
-  // Move step up or down in the list
   const moveStep = (id: string, direction: "up" | "down") => {
     const index = recipe.steps.findIndex(step => step.id === id);
     if (
@@ -194,7 +189,6 @@ export function RecipeForm({ initialRecipe = emptyRecipe, recipeId }: RecipeForm
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in">
-      {/* Basic Information */}
       <div className="space-y-4">
         <h2 className="text-xl font-medium">Recipe Information</h2>
         <div className="grid gap-4">
@@ -247,7 +241,6 @@ export function RecipeForm({ initialRecipe = emptyRecipe, recipeId }: RecipeForm
 
       <Separator />
       
-      {/* Ingredients Section */}
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-medium">Ingredients</h2>
@@ -269,7 +262,6 @@ export function RecipeForm({ initialRecipe = emptyRecipe, recipeId }: RecipeForm
               key={ingredient.id} 
               className="grid grid-cols-12 gap-3 items-center p-3 rounded-md subtle-ring bg-card"
             >
-              {/* Ordering */}
               <div className="col-span-1 flex flex-col space-y-1">
                 <Button
                   type="button"
@@ -293,7 +285,6 @@ export function RecipeForm({ initialRecipe = emptyRecipe, recipeId }: RecipeForm
                 </Button>
               </div>
               
-              {/* Name */}
               <div className="col-span-5">
                 <Input
                   value={ingredient.name}
@@ -303,7 +294,6 @@ export function RecipeForm({ initialRecipe = emptyRecipe, recipeId }: RecipeForm
                 />
               </div>
               
-              {/* Amount */}
               <div className="col-span-2">
                 <Input
                   value={ingredient.amount}
@@ -313,7 +303,6 @@ export function RecipeForm({ initialRecipe = emptyRecipe, recipeId }: RecipeForm
                 />
               </div>
               
-              {/* Unit */}
               <div className="col-span-3">
                 <Input
                   value={ingredient.unit}
@@ -323,7 +312,6 @@ export function RecipeForm({ initialRecipe = emptyRecipe, recipeId }: RecipeForm
                 />
               </div>
               
-              {/* Remove Button */}
               <div className="col-span-1 flex justify-end">
                 <Button
                   type="button"
@@ -343,7 +331,6 @@ export function RecipeForm({ initialRecipe = emptyRecipe, recipeId }: RecipeForm
 
       <Separator />
       
-      {/* Steps Section */}
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-medium">Steps</h2>
@@ -365,7 +352,6 @@ export function RecipeForm({ initialRecipe = emptyRecipe, recipeId }: RecipeForm
               key={step.id} 
               className="flex space-x-3 items-start p-3 rounded-md subtle-ring bg-card"
             >
-              {/* Step Number */}
               <div className="flex-shrink-0 flex flex-col items-center space-y-2">
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary font-medium">
                   {index + 1}
@@ -394,7 +380,6 @@ export function RecipeForm({ initialRecipe = emptyRecipe, recipeId }: RecipeForm
                 </div>
               </div>
               
-              {/* Step Description */}
               <div className="flex-grow">
                 <Textarea
                   value={step.description}
@@ -404,7 +389,6 @@ export function RecipeForm({ initialRecipe = emptyRecipe, recipeId }: RecipeForm
                 />
               </div>
               
-              {/* Remove Button */}
               <div className="flex-shrink-0">
                 <Button
                   type="button"
@@ -422,7 +406,6 @@ export function RecipeForm({ initialRecipe = emptyRecipe, recipeId }: RecipeForm
         </div>
       </div>
 
-      {/* Form Actions */}
       <div className="flex justify-end space-x-4 pt-4">
         <Button
           type="button"
