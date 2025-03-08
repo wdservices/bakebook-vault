@@ -14,9 +14,10 @@ import { useToast } from "@/hooks/use-toast";
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [users, setUsers] = useState([]);
-  const [chartData, setChartData] = useState([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [recipesCount, setRecipesCount] = useState(0);
   const { toast } = useToast();
   
   // Load real user data
@@ -54,6 +55,12 @@ const AdminDashboard = () => {
           
           // Prepare chart data based on user registration dates
           prepareChartData(data);
+          
+          // Get recipes count - in a real app, you would fetch this from your database
+          const recipesEstimate = data.length > 0 ? data.length * 2 : 0;
+          setRecipesCount(recipesEstimate);
+        } else {
+          console.log("No user data returned from Supabase");
         }
       } catch (error) {
         console.error("Error in admin dashboard:", error);
@@ -71,10 +78,10 @@ const AdminDashboard = () => {
   }, [navigate, toast]);
   
   // Process user data to generate monthly registration chart
-  const prepareChartData = (usersData) => {
+  const prepareChartData = (usersData: any[]) => {
     try {
       // Create a map to count users registered by month
-      const monthlyData = {};
+      const monthlyData: Record<string, number> = {};
       
       usersData.forEach(user => {
         if (user.created_at) {
@@ -108,10 +115,9 @@ const AdminDashboard = () => {
     }
   };
   
-  // Calculate total number of recipes - using a fixed number instead of string operations
+  // Calculate total number of recipes
   const getTotalRecipes = () => {
-    // We'll just show twice the number of users as a placeholder
-    return users.length > 0 ? users.length * 2 : 0;
+    return recipesCount;
   };
   
   if (!isAdmin) {
