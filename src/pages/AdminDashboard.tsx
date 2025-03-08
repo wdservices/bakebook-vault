@@ -49,6 +49,7 @@ const AdminDashboard = () => {
         }
         
         if (data) {
+          console.log("Fetched user data:", data);
           setUsers(data);
           
           // Prepare chart data based on user registration dates
@@ -107,11 +108,10 @@ const AdminDashboard = () => {
     }
   };
   
-  // Calculate total number of recipes
+  // Calculate total number of recipes - using a fixed number instead of string operations
   const getTotalRecipes = () => {
-    // In a real implementation, you would fetch this from your recipes table
-    // For now, we'll just return a placeholder value
-    return users.length * 2; // Just an example placeholder
+    // We'll just show twice the number of users as a placeholder
+    return users.length > 0 ? users.length * 2 : 0;
   };
   
   if (!isAdmin) {
