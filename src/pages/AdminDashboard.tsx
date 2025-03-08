@@ -8,38 +8,111 @@ import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ArrowLeft, Users, Store, BookOpen, UserCog } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-// Mock data - in a real app, this would come from a backend
-const mockUsers = [
-  { id: 1, email: "baker1@example.com", brandName: "Sweet Delights", joinDate: "2023-05-10", recipeCount: 12 },
-  { id: 2, email: "baker2@example.com", brandName: "Flour Power", joinDate: "2023-06-15", recipeCount: 8 },
-  { id: 3, email: "baker3@example.com", brandName: "Bake Me Happy", joinDate: "2023-07-22", recipeCount: 5 },
-  { id: 4, email: "baker4@example.com", brandName: "Bread Winners", joinDate: "2023-08-05", recipeCount: 15 },
-  { id: 5, email: "baker5@example.com", brandName: "Sugar Rush", joinDate: "2023-09-18", recipeCount: 7 },
-];
-
-const chartData = [
-  { name: 'May', users: 1 },
-  { name: 'Jun', users: 2 },
-  { name: 'Jul', users: 3 },
-  { name: 'Aug', users: 4 },
-  { name: 'Sep', users: 5 },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [chartData, setChartData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   
+  // Load real user data
   useEffect(() => {
-    // Check if the logged-in user is an admin
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    setIsAdmin(user.isAdmin === true);
+    const fetchUsers = async () => {
+      try {
+        // Check if the logged-in user is an admin
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        setIsAdmin(user.isAdmin === true);
+        
+        // If not admin, redirect to home
+        if (!user.isAdmin) {
+          navigate("/");
+          return;
+        }
+        
+        // Fetch profiles from Supabase
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*');
+        
+        if (error) {
+          console.error("Error fetching users:", error);
+          toast({
+            title: "Error fetching users",
+            description: error.message,
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (data) {
+          setUsers(data);
+          
+          // Prepare chart data based on user registration dates
+          prepareChartData(data);
+        }
+      } catch (error) {
+        console.error("Error in admin dashboard:", error);
+        toast({
+          title: "Error loading dashboard",
+          description: "Failed to load admin dashboard data",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    // If not admin, redirect to home
-    if (!user.isAdmin) {
-      navigate("/");
+    fetchUsers();
+  }, [navigate, toast]);
+  
+  // Process user data to generate monthly registration chart
+  const prepareChartData = (usersData) => {
+    try {
+      // Create a map to count users registered by month
+      const monthlyData = {};
+      
+      usersData.forEach(user => {
+        if (user.created_at) {
+          const date = new Date(user.created_at);
+          const monthYear = `${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`;
+          
+          if (!monthlyData[monthYear]) {
+            monthlyData[monthYear] = 0;
+          }
+          
+          monthlyData[monthYear]++;
+        }
+      });
+      
+      // Convert to array format for the chart
+      const chartDataArray = Object.keys(monthlyData).map(month => ({
+        name: month,
+        users: monthlyData[month]
+      }));
+      
+      // Sort by date (assuming format "MMM YYYY")
+      chartDataArray.sort((a, b) => {
+        const dateA = new Date(a.name);
+        const dateB = new Date(b.name);
+        return dateA - dateB;
+      });
+      
+      setChartData(chartDataArray);
+    } catch (error) {
+      console.error("Error preparing chart data:", error);
     }
-  }, [navigate]);
+  };
+  
+  // Calculate total number of recipes
+  const getTotalRecipes = () => {
+    // In a real implementation, you would fetch this from your recipes table
+    // For now, we'll just return a placeholder value
+    return users.length * 2; // Just an example placeholder
+  };
   
   if (!isAdmin) {
     return null; // Don't render anything while checking admin status
@@ -72,7 +145,7 @@ const AdminDashboard = () => {
           <CardContent>
             <div className="flex items-center">
               <Users className="h-5 w-5 text-muted-foreground mr-2" />
-              <span className="text-2xl font-bold">{mockUsers.length}</span>
+              <span className="text-2xl font-bold">{users.length}</span>
             </div>
           </CardContent>
         </Card>
@@ -84,7 +157,7 @@ const AdminDashboard = () => {
           <CardContent>
             <div className="flex items-center">
               <Store className="h-5 w-5 text-muted-foreground mr-2" />
-              <span className="text-2xl font-bold">{mockUsers.length}</span>
+              <span className="text-2xl font-bold">{users.length}</span>
             </div>
           </CardContent>
         </Card>
@@ -97,7 +170,7 @@ const AdminDashboard = () => {
             <div className="flex items-center">
               <BookOpen className="h-5 w-5 text-muted-foreground mr-2" />
               <span className="text-2xl font-bold">
-                {mockUsers.reduce((total, user) => total + user.recipeCount, 0)}
+                {getTotalRecipes()}
               </span>
             </div>
           </CardContent>
@@ -117,39 +190,49 @@ const AdminDashboard = () => {
               <CardDescription>View and manage all registered users</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b bg-muted/50">
-                        <th className="py-3 px-4 text-left font-medium">User</th>
-                        <th className="py-3 px-4 text-left font-medium">Brand Name</th>
-                        <th className="py-3 px-4 text-left font-medium">Join Date</th>
-                        <th className="py-3 px-4 text-left font-medium">Recipes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {mockUsers.map(user => (
-                        <tr key={user.id} className="border-b">
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-8 w-8">
-                                <AvatarFallback>{user.brandName.charAt(0)}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium">{user.email}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">{user.brandName}</td>
-                          <td className="py-3 px-4">{user.joinDate}</td>
-                          <td className="py-3 px-4">{user.recipeCount}</td>
+              {loading ? (
+                <div className="py-6 text-center text-muted-foreground">Loading users...</div>
+              ) : users.length === 0 ? (
+                <div className="py-6 text-center text-muted-foreground">No users registered yet</div>
+              ) : (
+                <div className="rounded-md border">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b bg-muted/50">
+                          <th className="py-3 px-4 text-left font-medium">User</th>
+                          <th className="py-3 px-4 text-left font-medium">Brand Name</th>
+                          <th className="py-3 px-4 text-left font-medium">Join Date</th>
+                          <th className="py-3 px-4 text-left font-medium">Role</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {users.map(user => (
+                          <tr key={user.id} className="border-b">
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarFallback>{user.brand_name ? user.brand_name.charAt(0) : 'U'}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="font-medium">{user.name || 'Unknown'}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">{user.brand_name || 'No Brand'}</td>
+                            <td className="py-3 px-4">
+                              {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
+                            </td>
+                            <td className="py-3 px-4">
+                              <Badge variant="outline">{user.role}</Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -162,15 +245,21 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="users" fill="var(--primary)" />
-                  </BarChart>
-                </ResponsiveContainer>
+                {chartData.length === 0 ? (
+                  <div className="py-6 text-center text-muted-foreground h-full flex items-center justify-center">
+                    No registration data available
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="users" fill="var(--primary)" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </CardContent>
           </Card>
