@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Phone, Lock, Store, ArrowRight, ArrowLeft } from "lucide-react";
+import { Mail, Phone, Lock, Store, ArrowRight, ArrowLeft, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -27,6 +26,40 @@ const Login = () => {
   const { toast } = useToast();
 
   const from = location.state?.from?.pathname || "/dashboard";
+
+  const clearLoginData = async () => {
+    try {
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+      
+      // Clear localStorage
+      localStorage.removeItem("user");
+      localStorage.clear();
+      
+      // Clear form fields
+      setEmail("");
+      setPhone("");
+      setPassword("");
+      setBrandName("");
+      
+      // Trigger storage event to update other components
+      window.dispatchEvent(new Event('storage'));
+      
+      toast({
+        title: "Login data cleared",
+        description: "All stored login data has been removed",
+      });
+      
+      console.log("Login data cleared successfully");
+    } catch (error) {
+      console.error("Error clearing login data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to clear some login data",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -235,6 +268,16 @@ const Login = () => {
         <ArrowLeft className="h-4 w-4" />
         Back to Home
       </Link>
+      
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={clearLoginData}
+        className="absolute top-6 right-6 flex items-center gap-1"
+      >
+        <Trash2 className="h-4 w-4" />
+        Clear Data
+      </Button>
       
       <Card className="w-full max-w-md mx-auto animate-scale-in">
         <CardHeader className="space-y-1">
